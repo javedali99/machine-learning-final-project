@@ -1,4 +1,4 @@
-# Group Project for Machine Learning (CAP5610)
+# Group Project for Machine Learning (CAP5610) Class
 
 **Title:** Storm Surge Modeling in South Florida using Machine Learning Methods
 
