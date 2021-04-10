@@ -10,6 +10,8 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import KFold
 from sklearn.model_selection import RepeatedKFold
 from sklearn.model_selection import cross_val_score
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.datasets import make_regression
 
 ## Load St. Pete Water Level data
 matstruct_contents = sio.loadmat('WaterLevel_St_Pete_hourly.mat')
@@ -79,13 +81,27 @@ Inputs = Predictors.drop(inan,axis=0)       # remove NaNs from predictors
 Target = predict     # Surge is what we want to predict
 
 RF = RandomForestClassifier(criterion='gini')
-RF.fit(Inputs,Target)
+#RF.fit(Inputs,Target)
 # ValueError: Unknown label type: 'continuous'
 #print(rf.score(Inputs,Target)) #Check model performance (1 being the best)
 
 #rf_accuracy = cross_val_score(rf,Inputs,Target)
 #avg_rf_accuracy = rf_accuracy.mean()
 
+# Try Random Forest Regressor
+
+# test on synthetic data
+X, y = make_regression(n_features=4, n_informative=2,
+                        random_state=0, shuffle=False)
+Regr = RandomForestRegressor(max_depth=2, random_state=0)
+Regr.fit(X, y)
+print(Regr.predict([[0, 0, 0, 0]]))
+
+# use my data
+regr = RandomForestRegressor(max_depth=2, random_state=0)
+regr.fit(Inputs, np.ravel(Target))
+print(regr.predict([[0, 0, 0]]))  # Predict regression target for X.
+regr.score(Inputs,np.ravel(Target))
 
 ##### SUPPORT VECTOR MACHINE #####
 
