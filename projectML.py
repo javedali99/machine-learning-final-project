@@ -157,13 +157,14 @@ Target = predict     # Surge is what we want to predict
 x_train, x_test, y_train, y_test, = \
             train_test_split(Inputs, Target, test_size = 0.3, random_state =42)
 
-# Apply time-lag to the data
-data = 'cuxhaven_data.csv'
-x, surge_w1 = time_lag(data, 5) # time-lagged data up to 6-hourly
-
 # Standardize the Training & Test Datasets
 x_norm_train = preprocessing.scale(x_train)
 x_norm_test = preprocessing.scale(x_test)
+
+
+# Apply time-lag to the data
+data = 'cuxhaven_data.csv'
+x, surge_w1 = time_lag(data, 5) # time-lagged data up to 6-hourly
 
 # Split time-lagged data to training and test sets
 # 2-yr. record
@@ -223,12 +224,35 @@ lrmse = np.sqrt(metrics.mean_squared_error(ly_test['surge'], predictions)) #0.08
 # adjust parameters
 regressor = RandomForestRegressor(n_estimators = 100, random_state = 0)
 regressor.fit(lx_norm_train, ly_train['surge'])
-print(regressor.predict([[0, 0, 0]]))  # Predict regression target for X.
+#print(regressor.predict([[0, 0, 0]]))  # Predict regression target for X.
 rpredictions = regressor.predict(lx_norm_test)
 print(regressor.score(lx_norm_train, ly_train['surge'])) # 0.96
 
 lrmse2 = np.sqrt(metrics.mean_squared_error(ly_test['surge'], rpredictions))
-print(rmse2) #0.077
+print(lrmse2) #0.059
+
+# Plot results
+
+y = ly_test[:]
+y.reset_index(inplace=True)
+y.drop(['index'], axis = 1, inplace=True)
+# order dates chronologically
+yy = y.sort_values(by='date')
+lyy_test = ly_test.sort_values(by='date')
+
+plt.plot(surge_w1['date'],surge_w1['surge'], 'black') # un-split surge dataset
+
+plt.figure(figsize=(14, 7))
+
+plt.plot(surge_w1['date'],surge_w1['surge'], 'black') # un-split surge dataset
+
+plt.plot(lyy_test['date'], yy['surge'], 'blue') # zsh: segmentation fault python
+plt.plot(lyy_test['date'], rpredictions, 'green')
+plt.legend(['Un-split observed surge dataset', 'Test Observed Surge', 'Predicted Surge (RFR)'], fontsize = 14)
+plt.xlabel('Time')
+plt.ylabel('Surge Height (m)')
+plt.title("Observed vs. Test Predicted Storm Surge Height", fontsize=20, y=1.03)
+plt.show()
 
 ##### SUPPORT VECTOR MACHINE #####
 
