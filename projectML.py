@@ -15,6 +15,7 @@ from sklearn.model_selection import RepeatedKFold
 from sklearn.model_selection import cross_val_score
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.datasets import make_regression
+from sklearn.svm import SVR
 
 ## Load St. Pete Water Level data
 matstruct_contents = sio.loadmat('WaterLevel_St_Pete_hourly.mat')
@@ -221,7 +222,7 @@ print(regr.score(lx_norm_train,ly_train['surge']))       # r^2 score
 
 lrmse = np.sqrt(metrics.mean_squared_error(ly_test['surge'], predictions)) #0.08
 
-# adjust parameters
+# adjust parameters (BETTER)
 regressor = RandomForestRegressor(n_estimators = 100, random_state = 0)
 regressor.fit(lx_norm_train, ly_train['surge'])
 #print(regressor.predict([[0, 0, 0]]))  # Predict regression target for X.
@@ -237,10 +238,11 @@ y = ly_test[:]
 y.reset_index(inplace=True)
 y.drop(['index'], axis = 1, inplace=True)
 # order dates chronologically
-yy = y.sort_values(by='date')
+yy = y.sort_values(by='date')  # Test dataset in chronological order
 lyy_test = ly_test.sort_values(by='date')
+lyy_test.reset_index(inplace=True)
+lyy_test.drop(['index'], axis = 1, inplace=True)
 
-plt.plot(surge_w1['date'],surge_w1['surge'], 'black') # un-split surge dataset
 
 plt.figure(figsize=(14, 7))
 
@@ -256,4 +258,39 @@ plt.show()
 
 ##### SUPPORT VECTOR MACHINE #####
 
+# prepare data format
+
+tr = ly_train[:]
+tr.reset_index(inplace=True)
+tr.drop(['index'], axis = 1, inplace=True)
+# order dates chronologically
+trai = tr.sort_values(by='date')  # Train dataset in chronological order
+trai.reset_index(inplace=True)    # Fix new index
+trai.drop(['index'], axis = 1, inplace=True)
+
+X = lyy_test['date']
+
+retry = trai['surge']
+horizontal = trai['date']
+
 # attempt support vector regression
+svr_rbf = SVR(kernel='rbf', C=100, gamma=0.1, epsilon=.1)
+svr_lin = SVR(kernel='linear', C=100, gamma='auto')
+svr_poly = SVR(kernel='poly', C=100, gamma='auto', degree=3, epsilon=.1,
+               coef0=1)
+
+# RBF
+svr_rbf.fit(lx_norm_train,ly_train['surge'])
+pred_svr_rbf = svr_rbf.predict(lx_norm_test)
+print(svr_rbf.score(lx_norm_train, ly_train['surge'])) # Model Score R^2 of 0.57
+
+# Plot results
+plt.figure(figsize=(14, 7))
+plt.plot(surge_w1['date'],surge_w1['surge'], 'black') # un-split surge dataset
+plt.plot(lyy_test['date'], yy['surge'], 'blue')
+
+plt.figure(figsize=(14, 7))
+plt.plot(lyy_test['date'], pred_svr_rbf)    # seems to be a different order of magnitude
+
+#plt.scatter(horizontal[svr_rbf.support_], retry[svr_rbf.support_]) # struggling
+plt.show()
