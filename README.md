@@ -6,9 +6,9 @@
 - Javed Ali
 - Amanda Barroso
 
-** Description** 
+**Description**
 
-- [Storm surge prediction using ML.ipynb](https://github.com/javedali99/machine-learning-final-project/blob/main/Storm surge prediction using ML.ipynb) - This file includes:
+- [Storm surge prediction using ML.ipynb](https://github.com/javedali99/machine-learning-final-project/blob/main/Storm%20surge%20prediction%20using%20ML.ipynb) - This file includes:
   - Data preprocessing 
     - Data cleaning, feature selection and creating time lagging predictors data
     - Data preparation (predictor and predictand data)
