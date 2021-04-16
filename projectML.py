@@ -36,8 +36,8 @@ plt.show()
 ## Load Cuxhaven storm surge data (because it is already prepared)
 
 # data_cux = pd.read_csv('cuxhaven_data.csv') # 2-year record
-# Full record
-data_cux = pd.read_csv('cuxhaven_de.csv') # FULL RECORD
+
+data_cux = pd.read_csv('cuxhaven_de.csv') # 2011-2015 record
 
 # features
 data_cux.info()
@@ -168,7 +168,8 @@ x_norm_test = preprocessing.scale(x_test)
 
 
 # Apply time-lag to the data
-data = 'cuxhaven_data.csv'
+#data = 'cuxhaven_data.csv'      # 2-yr. record
+data = 'cuxhaven_de.csv'       # 2011-2015 record
 x, surge_w1 = time_lag(data, 5) # time-lagged data up to 6-hourly
 
 # Split time-lagged data to training and test sets
@@ -183,16 +184,6 @@ lx_norm_test = preprocessing.scale(lx_test)
 ## MACHINE LEARNING METHODS
 
 ###### RANDOM FOREST ######
-
-## Apply the five-fold cross validation of the random forest learning algorithm to the training data to extract average classification accuracy
-
-#RF = RandomForestClassifier(criterion='gini')
-#RF.fit(Inputs,Target)
-# ValueError: Unknown label type: 'continuous'
-#print(rf.score(Inputs,Target)) #Check model performance (1 being the best)
-
-#rf_accuracy = cross_val_score(rf,Inputs,Target)
-#avg_rf_accuracy = rf_accuracy.mean()
 
 # Try Random Forest Regressor
 
@@ -236,6 +227,8 @@ print(regressor.score(lx_norm_train, ly_train['surge']))  # r^2 score 0.96
 lrmse2 = np.sqrt(metrics.mean_squared_error(ly_test['surge'], rpredictions))
 print(lrmse2) #0.059
 
+# using full record (cuxhaven.de), the r^2 score goes to 0.97, and rmse goes to 0.15
+
 # Plot results
 
 y = ly_test[:]
@@ -252,13 +245,18 @@ plt.figure(figsize=(14, 7))
 
 plt.plot(surge_w1['date'],surge_w1['surge'], 'black') # un-split surge dataset
 
-plt.plot(lyy_test['date'], yy['surge'], 'blue') # zsh: segmentation fault python
+plt.plot(lyy_test['date'], yy['surge'], 'blue')
 plt.plot(lyy_test['date'], rpredictions, 'green')
 plt.legend(['Un-split observed surge dataset', 'Test Observed Surge', 'Predicted Surge (RFR)'], fontsize = 14)
 plt.xlabel('Time')
 plt.ylabel('Surge Height (m)')
 plt.title("Observed vs. Test Predicted Storm Surge Height", fontsize=20, y=1.03)
 plt.show()
+
+# Evaluation metrics
+RF_MSE = metrics.mean_squared_error(ly_test['surge'], rpredictions)
+RF_MAE = metrics.mean_absolute_error(ly_test['surge'], rpredictions)
+RF_r2 = regressor.score(lx_norm_train, ly_train['surge'])
 
 ##### SUPPORT VECTOR REGRESSION #####
 
@@ -284,16 +282,20 @@ svr_poly = SVR(kernel='poly', C=100, gamma='auto', degree=3, epsilon=.1,
 # Tune the hyperparameters
 svr_rbf.get_params()
 
-svr_params = {'kernel': ['rbf','linear'], 'C': [0.1,1,10,20], 'gamma':[1, 0.1, 0.01, 0.001]}
+svr_params = {'kernel': ['rbf'], 'C': [0.1,1,10,20], 'gamma':[1, 0.1, 0.01, 0.001]}
 tune = GridSearchCV(SVR(), svr_params, cv=5)
 tune.fit(lx_norm_train,ly_train['surge'])
 tune.cv_results_
 
-print("Best score: ", tune.best_score_)         #0.727
+print("Best score: ", tune.best_score_)         #0.727 (2-yr. data)
 print("Best parameters: ", tune.best_params_)
 
-# Try with the best parameters
-svr_rbf = SVR(kernel='rbf', C=1, gamma=0.001)
+# Try with the best parameters (2-yr data)
+#svr_rbf = SVR(kernel='rbf', C=1, gamma=0.001)
+
+# Best parameters for cuxhaven.de (~5yr. data)
+# score: 0.831, Best parameters:  {'C': 10, 'gamma': 0.001
+svr_rbf = SVR(kernel='rbf', C=10, gamma=0.001)
 
 # RBF
 svr_rbf.fit(lx_norm_train,ly_train['surge'])
@@ -313,10 +315,15 @@ plt.scatter(horizontal[svr_rbf.support_], retry[svr_rbf.support_], \
             facecolor='none', edgecolor='green', )
 plt.show()
 
+# Evaluation metrics
+SVR_MSE = metrics.mean_squared_error(ly_test['surge'], pred_svr_rbf)
+SVR_MAE = metrics.mean_absolute_error(ly_test['surge'], pred_svr_rbf)
+SVR_r2 = svr_rbf.score(lx_norm_train, ly_train['surge'])
+
 # Linear
 #lin_svr
 
-lin_params = {'kernel': ['linear'], 'C': [0.1]}
+lin_params = {'kernel': ['linear'], 'C': [0.1,1,10]}
 ltune = GridSearchCV(SVR(), lin_params, cv=5)
 ltune.fit(lx_norm_train,ly_train['surge'])
 ltune.cv_results_
