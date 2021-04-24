@@ -19,23 +19,21 @@ from sklearn.svm import SVR
 from sklearn.model_selection import GridSearchCV
 
 ## Load St. Pete Water Level data
-matstruct_contents = sio.loadmat('WaterLevel_St_Pete_hourly.mat')
+#matstruct_contents = sio.loadmat('WaterLevel_St_Pete_hourly.mat')
 
-raw_waterlevel= matstruct_contents['WaterLevel']
-Time = matstruct_contents['Time']
+#raw_waterlevel= matstruct_contents['WaterLevel']
+#Time = matstruct_contents['Time']
 
-plt.plot(Time,raw_waterlevel)
-plt.show()
+#plt.plot(Time,raw_waterlevel)
+#plt.show()
 
-detrended = sio.loadmat('hourlydt.mat')
+#detrended = sio.loadmat('hourlydt.mat')
 
-dt_water = detrended['hourlydt']
-plt.plot(Time,dt_water)
-plt.show()
+#dt_water = detrended['hourlydt']
+#plt.plot(Time,dt_water)
+#plt.show()
 
 ## Load Cuxhaven storm surge data (because it is already prepared)
-
-# data_cux = pd.read_csv('cuxhaven_data.csv') # 2-year record
 
 data_cux = pd.read_csv('cuxhaven_de.csv') # 2011-2015 record
 
@@ -53,8 +51,6 @@ surge = data_cux['surge m']
 data_cux.columns = ['time', 'u_wind', 'v_wind', 'mslp', 'weight', 'surge']
 
 ## Understanding the function before applying it
-
-# remember to fix the wind vector calculation, and adjust the time to calendar
 
 #time_orig = pd.to_datetime('1900-01-01')
 #data_cux[surge.isna()]         # Check NaNs
@@ -157,25 +153,18 @@ Predictors = pd.DataFrame(data_cux.drop(columns=['time',
 Inputs = Predictors.drop(inan,axis=0)       # remove NaNs from predictors
 Target = predict     # Surge is what we want to predict
 
-# Split data to training and test sets
-# 2-year record un-lagged data
-x_train, x_test, y_train, y_test, = \
-            train_test_split(Inputs, Target, test_size = 0.3, random_state =42)
-
 # Standardize the Training & Test Datasets
 x_norm_train = preprocessing.scale(x_train)
 x_norm_test = preprocessing.scale(x_test)
 
 
 # Apply time-lag to the data
-#data = 'cuxhaven_data.csv'      # 2-yr. record
 data = 'cuxhaven_de.csv'       # 2011-2015 record
 x, surge_w1 = time_lag(data, 5) # time-lagged data up to 6-hourly
 
 # Split time-lagged data to training and test sets
-# 2-yr. record
-lx_train, lx_test, ly_train, ly_test, = \
-            train_test_split(x, surge_w1, test_size = 0.3, random_state =42)
+lx_train, lx_test, ly_train, ly_test, = train_test_split(x, surge_w1, \
+                        shuffle=False, test_size = 0.2, random_state =42)
 
 # Standardize the time-lagged Training & Test Datasets
 lx_norm_train = preprocessing.scale(lx_train)
@@ -211,7 +200,7 @@ print(rmse2)  # 0.07
 # 2-yr
 regr = RandomForestRegressor(max_depth=2, random_state=0)
 regr.fit(lx_norm_train, ly_train['surge'])  # Train the model with training dataset
-print(_regr.predict([[0, 0, 0]]))  # Predict regression target for X.
+#print(_regr.predict([[0, 0, 0]]))  # Predict regression target for X.
 predictions = regr.predict(lx_norm_test)    # Predict with the test dataset predictors (wind, mslp)
 print(regr.score(lx_norm_train,ly_train['surge']))       # r^2 score
 # Compare the surge values from the test dataset to the predicted surge values
@@ -227,30 +216,22 @@ print(regressor.score(lx_norm_train, ly_train['surge']))  # r^2 score 0.96
 lrmse2 = np.sqrt(metrics.mean_squared_error(ly_test['surge'], rpredictions))
 print(lrmse2) #0.059
 
-# using full record (cuxhaven.de), the r^2 score goes to 0.97, and rmse goes to 0.15
-
 # Plot results
 
 y = ly_test[:]
 y.reset_index(inplace=True)
 y.drop(['index'], axis = 1, inplace=True)
-# order dates chronologically
-yy = y.sort_values(by='date')  # Test dataset in chronological order
-lyy_test = ly_test.sort_values(by='date')
-lyy_test.reset_index(inplace=True)
-lyy_test.drop(['index'], axis = 1, inplace=True)
-
 
 plt.figure(figsize=(14, 7))
 
-plt.plot(surge_w1['date'],surge_w1['surge'], 'black') # un-split surge dataset
+#plt.plot(surge_w1['date'],surge_w1['surge'], 'black') # un-split surge dataset
 
-plt.plot(lyy_test['date'], yy['surge'], 'blue')
-plt.plot(lyy_test['date'], rpredictions, 'green')
-plt.legend(['Un-split observed surge dataset', 'Test Observed Surge', 'Predicted Surge (RFR)'], fontsize = 14)
+plt.plot(ly_test['date'], y['surge'], 'blue')
+plt.plot(ly_test['date'], rpredictions, 'red')
+plt.legend(['Test Observed Surge', 'Predicted Surge (RFR)'], fontsize = 14)
 plt.xlabel('Time')
 plt.ylabel('Surge Height (m)')
-plt.title("Observed vs. Test Predicted Storm Surge Height", fontsize=20, y=1.03)
+plt.title("Observed vs. Predicted Storm Surge Height", fontsize=20, y=1.03)
 plt.show()
 
 # Evaluation metrics
@@ -262,16 +243,14 @@ RF_r2 = regressor.score(lx_norm_train, ly_train['surge'])
 
 # prepare data format
 
-tr = ly_train[:]
-# order dates chronologically
-trai = tr.sort_values(by='date')  # Train dataset in chronological order
-trai.reset_index(inplace=True)    # Fix new index
-trai.drop(['index'], axis = 1, inplace=True)
+ytr = ly_train[:]
+ytr.reset_index(inplace=True)
+ytr.drop(['index'], axis = 1, inplace=True)
 
-X = lyy_test['date']
+X = ly_test['date']
 
-retry = trai['surge']       # surge in training data
-horizontal = trai['date']   # date in training data
+retry = ytr['surge']       # surge in training data
+horizontal = ytr['date']   # date in training data
 
 # attempt support vector regression
 svr_rbf = SVR(kernel='rbf', C=100, gamma=0.1, epsilon=.1)
@@ -282,7 +261,7 @@ svr_poly = SVR(kernel='poly', C=100, gamma='auto', degree=3, epsilon=.1,
 # Tune the hyperparameters
 svr_rbf.get_params()
 
-svr_params = {'kernel': ['rbf'], 'C': [0.1,1,10,20], 'gamma':[1, 0.1, 0.01, 0.001]}
+svr_params = {'kernel': ['rbf'], 'C': [0.1,1,10,20,50], 'gamma':[1, 0.1, 0.01, 0.001]}
 tune = GridSearchCV(SVR(), svr_params, cv=5)
 tune.fit(lx_norm_train,ly_train['surge'])
 tune.cv_results_
@@ -295,24 +274,37 @@ print("Best parameters: ", tune.best_params_)
 
 # Best parameters for cuxhaven.de (~5yr. data)
 # score: 0.831, Best parameters:  {'C': 10, 'gamma': 0.001
-svr_rbf = SVR(kernel='rbf', C=10, gamma=0.001)
+#svr_rbf = SVR(kernel='rbf', C=10, gamma=0.001)
 
+#Best parameters for 0.2 split
+# score: 0.834, Best parammeters: {'C': 20, 'gamma': 0.001, 'kernel': 'rbf'}
+#svr_rbf = SVR(kernel='rbf', C=20, gamma=0.001)
+
+# Unshuffled Best parameters for 0.2 split
+# score: 0.812, Best parameters: {'C': 10, 'gamma': 0.001, 'kernel': 'rbf'}
+svr_rbf = SVR(kernel='rbf', C=10, gamma=0.001)
+eps = 0.1
 # RBF
 svr_rbf.fit(lx_norm_train,ly_train['surge'])
 pred_svr_rbf = svr_rbf.predict(lx_norm_test) # surge predictions by the svr_rbf model
 print(svr_rbf.score(lx_norm_train, ly_train['surge'])) # Model Score R^2 of 0.777
 # Compare the surge values from the test dataset to the predicted surge values
-SR_rmse = np.sqrt(metrics.mean_squared_error(lyy_test['surge'], pred_svr_rbf))
+SR_rmse = np.sqrt(metrics.mean_squared_error(ly_test['surge'], pred_svr_rbf))
 
 # Plot results
 plt.figure(figsize=(14, 7))
-#plt.plot(surge_w1['date'],surge_w1['surge'], 'black') # un-split surge dataset
-plt.plot(lyy_test['date'], lyy_test['surge'], 'blue') # test data (target: surge)
+plt.plot(surge_w1['date'],surge_w1['surge'], 'black') # un-split surge dataset
+plt.plot(ly_test['date'], ly_test['surge'], 'blue') # test data (target: surge)
 
-plt.plot(lyy_test['date'], pred_svr_rbf, 'red')
+plt.plot(ly_test['date'], pred_svr_rbf, 'red')
+#plt.scatter(horizontal[svr_rbf.support_], retry[svr_rbf.support_], \
+          # facecolor='none', edgecolor='red', )  # support vectors
+plt.plot(ly_test['date'], pred_svr_rbf+eps, color='g', linestyle='--')
+plt.plot(ly_test['date'], pred_svr_rbf-eps, color='g', linestyle='--')
 
-plt.scatter(horizontal[svr_rbf.support_], retry[svr_rbf.support_], \
-            facecolor='none', edgecolor='green', )
+plt.xlabel('Time')
+plt.ylabel('Surge Height (m)')
+plt.legend(['Test Observed Surge', 'Predicted Surge (SVR-RBF Kernel)'])
 plt.show()
 
 # Evaluation metrics
@@ -328,9 +320,8 @@ ltune = GridSearchCV(SVR(), lin_params, cv=5)
 ltune.fit(lx_norm_train,ly_train['surge'])
 ltune.cv_results_
 
-print("Best score: ", ltune.best_score_)         # 0.687
-print("Best parameters: ", ltune.best_params_)   # C: 0.1
-
+print("Best score: ", ltune.best_score_)         # 0.
+print("Best parameters: ", ltune.best_params_)   # C:
 
 # Polynomial (quadratic degree 2)
 poly_para = {'kernel': ['poly'], 'C': [0.1, 1, 10, 50], 'gamma': [1, 0.1, 0.01, 0.001], 'degree': [2]}
@@ -350,3 +341,24 @@ p3svm.cv_results_
 print("Best score: ", p3svm.best_score_)         # 0.53
 print("Best parameters: ", p3svm.best_params_)
 
+##### improve most promising method: SVR had lowest MSE (RF had highest R2)
+## Change temporal resolution to "daily max surge" instead of hourly
+
+# Begin with y_training data. Set the DATE column as an index
+ytr_hourly_indx = ytr.set_index('date')
+# Resample by day (D)
+ytr_dmax = ytr_hourly_indx.resample('D').max()
+len(ytr_dmax)
+
+# Find the original index of the max values
+indx_ytr_dmax = np.where(ytr['surge'].isin(ytr_dmax['surge']) == True)
+
+len(indx_ytr_dmax[0])
+# Some surge values are repeated
+rep = np.where(ytr['surge'].duplicated()== True)
+ytr.loc[rep]
+
+ytr.loc[indx_ytr_dmax[0]]
+ytr_dmax.reset_index(inplace=True)
+
+ytr.loc[rep]['date']
