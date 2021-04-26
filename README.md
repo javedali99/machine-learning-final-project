@@ -2,9 +2,6 @@
 
 **Title:** Storm Surge Prediction Using Different Machine Learning Methods
 
-**Members:** 
-- Javed Ali
-- Amanda Barroso
 
 **Description**
 
@@ -27,4 +24,6 @@
   - Data preprocessing
   - Random Forest Regression (RFR)
   - Support Vector Regression (SVR)
+    - Linear, RBF and Polynomial kernels for SVM
     - SVR hyper parameters tuning
+    - Improvement of the SVR method by changing temporal resolution to "daily max surge" instead of hourly
