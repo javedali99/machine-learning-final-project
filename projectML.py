@@ -350,9 +350,10 @@ ytr_hourly_indx = ytr.set_index('date')
 ytr_dmax = ytr_hourly_indx.resample('D').max()
 len(ytr_dmax)
 
+ytr_hourly_indx.reset_index(inplace=True)
+
 # Find the original index of the max values
 indx_ytr_dmax = np.where(ytr['surge'].isin(ytr_dmax['surge']) == True)
-
 len(indx_ytr_dmax[0])
 # Some surge values are repeated
 rep = np.where(ytr['surge'].duplicated()== True)
@@ -362,3 +363,25 @@ ytr.loc[indx_ytr_dmax[0]]
 ytr_dmax.reset_index(inplace=True)
 
 ytr.loc[rep]['date']
+
+
+## Change the time lagged data from hourly to daily max surge
+
+# Prepare data by fixing the index
+
+surge_hourly = surge_w1[['surge','date']]
+surge_hourly.reset_index(inplace=True)
+surge_hourly.drop(['index'], axis = 1, inplace=True)
+# To resample by day, Set the DATE column as an index
+surge_hrly_indx = surge_hourly.set_index('date')
+# Resample by day (D)
+surge_dailymax = surge_hrly_indx.resample('D').max()
+len(surge_dailymax)
+check = np.where(surge_hourly['surge'].isin(surge_dailymax['surge'])==True)
+len(check[0]) # There are additional repeated values of surge
+
+# Remove the hours from date to check between the 2
+surge_hourly['date'] = pd.to_datetime(surge_hourly['date']).dt.date
+surge_dailymax['date'] = pd.to_datetime(surge_dailymax['date']).dt.date
+
+surge_hourly[['surge','date']].isin(surge_dailymax[['surge','date']]
