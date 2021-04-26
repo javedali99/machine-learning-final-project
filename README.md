@@ -18,12 +18,22 @@
   - Long Short-Term Memory Networks (LSTM)
     - Building LSTM model, Data preparation, Training the model, Model evaluation and Plotting the results
   - Auto Regressive Integrated Moving Average (ARIMA)
+    - Model building and analysis
+    - Forecasting
+    - Model evaluation
+    - Results visualization 
   - Convolutional Neural Networks (CNN)
 
 - [projectML.py](https://github.com/javedali99/machine-learning-final-project/blob/main/projectML.py) - This file includes
   - Data preprocessing
   - Random Forest Regression (RFR)
+    - Data preprocessing
+    - Model evaluation
+    - Results visualization
   - Support Vector Regression (SVR)
+    - Data preprocessing
     - Linear, RBF and Polynomial kernels for SVM
+    - Model evaluation
     - SVR hyper parameters tuning
+    - Results visualization
     - Improvement of the SVR method by changing temporal resolution to "daily max surge" instead of hourly
