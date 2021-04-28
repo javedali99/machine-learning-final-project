@@ -28,10 +28,12 @@
   - Data preprocessing
   - Random Forest Regression (RFR)
     - Data preprocessing
+    - Training the model
     - Model evaluation
     - Results visualization
   - Support Vector Regression (SVR)
     - Data preprocessing
+    - Training the model
     - Linear, RBF and Polynomial kernels for SVM
     - Model evaluation
     - SVR hyper parameters tuning
