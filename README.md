@@ -1,4 +1,4 @@
-# Group Project for Machine Learning (CAP5610) Class
+# Term Project for Machine Learning (CAP5610) Class
 
 **Title:** Storm Surge Prediction Using Different Machine Learning Methods
 
