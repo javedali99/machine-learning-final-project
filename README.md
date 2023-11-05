@@ -1,6 +1,5 @@
-# Term Project for Machine Learning (CAP5610) Class
+# Storm Surge Prediction Using Different Machine Learning Methods
 
-**Title:** Storm Surge Prediction Using Different Machine Learning Methods
 
 
 **Description**
